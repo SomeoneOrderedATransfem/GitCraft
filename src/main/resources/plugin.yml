@@ -6,7 +6,7 @@ commands:
   gitcraft:
     description: "GitCraft Command"
     usage: "/gitcraft"
-    aliases: [gc]
+    aliases: []
     permission: gitcraft.command
     permission-message: "You do not have permission to use this command"
   gitcraft view <string>:
@@ -18,7 +18,7 @@ commands:
   gitcraft view:
     description: "List the open gitcraft commits"
     usage: "/gitcraft view"
-    aliases: [list]
+    aliases: []
     permission: gitcraft.command
     permission-message: "You do not have permission to use this command"
   gitcraft accept-commit <string>:

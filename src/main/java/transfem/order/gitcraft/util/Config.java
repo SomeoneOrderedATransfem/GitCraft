@@ -1,9 +1,7 @@
 package transfem.order.gitcraft.util;
 
 import org.bukkit.configuration.file.YamlConfiguration;
-
 import transfem.order.gitcraft.GitCraft;
-
 import java.io.File;
 
 public class Config {

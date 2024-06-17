@@ -1,13 +1,17 @@
 package transfem.order.gitcraft;
 
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.EventHandler;
 
 import transfem.order.gitcraft.Listeners.Listeners;
 import transfem.order.gitcraft.util.Config;
 import transfem.order.gitcraft.Commands.Commands;
+import transfem.order.gitcraft.Commands.CommandsTabCompleter;
 
-import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.event.EventHandler;
+import java.io.File;
+
+
 
 
 public final class GitCraft extends JavaPlugin {
@@ -17,6 +21,11 @@ public final class GitCraft extends JavaPlugin {
         if (!getDataFolder().exists()) {
             getDataFolder().mkdir();
         }
+        // Check if the folder "commit" exists
+        File commitFolder = new File(getDataFolder(), "commits");
+        if (!commitFolder.exists()) {
+            commitFolder.mkdir();
+        }
         // Load Config
         Config.load();
 
@@ -25,6 +34,10 @@ public final class GitCraft extends JavaPlugin {
 
         // set command excecutor
         this.getCommand("gitcraft").setExecutor(new Commands());
+
+        // set tab completer
+        this.getCommand("gitcraft").setTabCompleter(new CommandsTabCompleter());
+
         
     }
 
