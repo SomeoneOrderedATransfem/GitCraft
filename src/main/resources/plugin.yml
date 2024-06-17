@@ -75,4 +75,40 @@ commands:
     aliases: []
     permission: gitcraft.commit
     permission-message: "You do not have permission to use this command"
-
+  gitcraft config:
+    description: "GitCraft Configuration Command"
+    usage: "/gitcraft config"
+    aliases: []
+    permission: gitcraft.manage
+    permission-message: "You do not have permission to use this command"
+  gitcraft config set-world <string>:
+    description: "Set the main world"
+    usage: "/gitcraft config set-world <world>"
+    aliases: []
+    permission: gitcraft.manage
+    permission-message: "You do not have permission to use this command"
+  gitcraft config set-world:
+    description: "Set the main world to the current world"
+    usage: "/gitcraft config set-world"
+    aliases: []
+    permission: gitcraft.manage
+    permission-message: "You do not have permission to use this command"
+  gitcraft config set-chunk-radius <int>:
+    description: "Set the chunk radius"
+    usage: "/gitcraft config set-chunk-radius <radius>"
+    aliases: []
+    permission: gitcraft.manage
+    permission-message: "You do not have permission to use this command"
+permissions:
+  gitcraft.command:
+    description: "Allows the player to use the gitcraft command"
+    default: true
+  gitcraft.commit:
+    description: "Allows the player to use the commit commands"
+    default: false
+  gitcraft.commit.manage:
+    description: "Allows the player to manage the commits"
+    default: op
+  gitcraft.manage:
+    description: "Allows the player to manage the plugin"
+    default: op
