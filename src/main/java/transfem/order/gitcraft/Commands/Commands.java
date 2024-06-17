@@ -143,7 +143,7 @@ public class Commands implements CommandExecutor {
             if (args[0].equalsIgnoreCase("view")) {
                 if (args.length == 1) {
                     sender.sendMessage("List of worlds:");
-                    File[] files = new File(".").listFiles(new FilenameFilter() {
+                    File[] files = new File(GitCraft.getInstance().getDataFolder().getPath()).listFiles(new FilenameFilter() {
                         @Override
                         public boolean accept(File dir, String name) {
                             return name.startsWith("git-");
@@ -184,7 +184,7 @@ public class Commands implements CommandExecutor {
                     return true;
                 }
                 if (args.length == 2) {
-                    if (new File("git-" + args[1] + ".json").exists()) {
+                    if (new File(GitCraft.getInstance().getDataFolder(), "git-" + args[1] + ".json").exists()) {
                         // send the player to the world
                         sender.sendMessage("Teleporting to world...");
                         // find the world named git-<args[1]>
@@ -233,7 +233,7 @@ public class Commands implements CommandExecutor {
                             copyChunkToWorld(chunk, sender.getServer().getWorld(Config.WorldName()));
                         }
                         // delete the json file
-                        new File("git-" + args[1] + ".json").delete();
+                        new File(GitCraft.getInstance().getDataFolder(), "git-" + args[1] + ".json").delete();
                         sender.getServer().getWorld("git-" + args[1]).getWorldFolder().delete();
                         sender.sendMessage("Commit accepted!");
                         return true;
@@ -253,7 +253,7 @@ public class Commands implements CommandExecutor {
                 if (args.length == 3) {
                     if (sender.getServer().getWorld("git-" + args[1]) != null) {
                         // delete the json file
-                        new File("git-" + args[1] + ".json").delete();
+                        new File(GitCraft.getInstance().getDataFolder(), "git-" + args[1] + ".json").delete();
                         sender.getServer().getWorld("git-" + args[1]).getWorldFolder().delete();
                         sender.sendMessage("Commit rejected!");
                         return true;
@@ -273,7 +273,7 @@ public class Commands implements CommandExecutor {
                 // create a new world
                 sender.sendMessage("Creating new world...");
                 String worldName = "git-" + Long.toHexString(Double.doubleToLongBits(Math.random()));
-                while  (new File(worldName + ".json").exists()) {
+                while  (new File(GitCraft.getInstance().getDataFolder(), "git-"+worldName + ".json").exists()) {
                     worldName = "git-" + Long.toHexString(Double.doubleToLongBits(Math.random()));
                     
                 }
@@ -528,7 +528,7 @@ public class Commands implements CommandExecutor {
                             sender.sendMessage("You are not the author of this commit!");
                             return false;
                         }
-                        new File("git-" + args[1] + ".json").delete();
+                        new File(GitCraft.getInstance().getDataFolder(), "git-" + args[1] + ".json").delete();
                         sender.getServer().getWorld("git-" + args[1]).getWorldFolder().delete();
                         sender.sendMessage("Commit cancelled!");
                         return true;

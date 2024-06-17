@@ -13,19 +13,23 @@ import org.bukkit.event.EventHandler;
 public final class GitCraft extends JavaPlugin {
     @Override
     public void onEnable() {
-        //Load Config
-        new Config();
         // Check for Data Folder
         if (!getDataFolder().exists()) {
             getDataFolder().mkdir();
         }
+        // Load Config
+        Config.load();
+
         //Register Listeners
         getServer().getPluginManager().registerEvents(new Listeners(), this);
 
         // set command excecutor
         this.getCommand("gitcraft").setExecutor(new Commands());
         
-        
+    }
+
+    public static GitCraft getInstance() {
+        return JavaPlugin.getPlugin(GitCraft.class);
     }
 
     @Override

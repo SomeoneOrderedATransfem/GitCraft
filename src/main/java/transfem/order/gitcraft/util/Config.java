@@ -1,89 +1,82 @@
 package transfem.order.gitcraft.util;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
+import org.bukkit.configuration.file.YamlConfiguration;
+
+import transfem.order.gitcraft.GitCraft;
+
 import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
 
 public class Config {
-    private static final String CONFIG_PATH = "src/main/resources/config.json";
-    private static String WORLD_NAME;
-    private static int CHUNK_RADIUS;  
-    
-    public Config() {
-        File file = new File(CONFIG_PATH);
-        if (!file.exists()) {
-            return;
+    private final static Config instance = new Config();
+
+    private static File configFile;
+    private static YamlConfiguration config;
+
+    private static String worldName;
+    private static int chunkSize;
+
+    private Config() {
+    }
+
+    public static void load() {
+        configFile = new File(GitCraft.getInstance().getDataFolder(), "config.yml");
+
+        if (!configFile.exists()) {
+            GitCraft.getInstance().saveResource("config.yml", false);
         }
-        Gson gson = new Gson();
-        JsonObject jsonObject;
+
+        config = YamlConfiguration.loadConfiguration(configFile);
+        config.options().parseComments(true);
+
         try {
-            jsonObject = gson.fromJson(new FileReader(file), JsonObject.class);
-        } catch (IOException e) {
+            config.load(configFile);
+        } catch (Exception e) {
             e.printStackTrace();
-            return;
         }
-        JsonElement element = jsonObject.get("worldName");
-        if (element != null) {
-            WORLD_NAME = element.getAsString();
+
+        worldName = config.getString("worldName");
+        chunkSize = config.getInt("chunkSize");
+    }
+
+    public static void save() {
+        config.set("worldName", worldName);
+        config.set("chunkSize", chunkSize);
+
+        try {
+            config.save(configFile);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-        element = jsonObject.get("chunkSize");
-        if (element != null) {
-            CHUNK_RADIUS = element.getAsInt();
-        }
+    }
+
+    public static void set(String path, Object value) {
+        config.set(path, value);
+
+        save();
     }
 
     public static String WorldName() {
-    return WORLD_NAME;
+        return worldName;
     }
 
     public static int ChunkRadius() {
-        return CHUNK_RADIUS;
+        return chunkSize;
     }
 
-    public static boolean setWorldName(String worldName) {
-        File file = new File(CONFIG_PATH);
-        if (!file.exists()) {
-            return false;
-        }
-        Gson gson = new Gson();
-        JsonObject jsonObject;
-        try {
-            jsonObject = gson.fromJson(new FileReader(file), JsonObject.class);
-        } catch (IOException e) {
-            e.printStackTrace();
-            return false;
-        }
-        JsonElement element = jsonObject.get("worldName");
-        if (element == null) {
-            return false;
-        }
-        jsonObject.addProperty("worldName", worldName);
-        WORLD_NAME = worldName;
-        return true;
+    public static void setWorldName(String worldName) {
+        Config.worldName = worldName;
+
+        set("worldName", worldName);
     }
 
-    public static boolean setChunkRadius(int chunkSize) {
-        File file = new File(CONFIG_PATH);
-        if (!file.exists()) {
-            return false;
-        }
-        Gson gson = new Gson();
-        JsonObject jsonObject;
-        try {
-            jsonObject = gson.fromJson(new FileReader(file), JsonObject.class);
-        } catch (IOException e) {
-            e.printStackTrace();
-            return false;
-        }
-        JsonElement element = jsonObject.get("chunkSize");
-        if (element == null) {
-            return false;
-        }
-        jsonObject.addProperty("chunkSize", chunkSize);
-        CHUNK_RADIUS = chunkSize;
-        return true;
+    public static void setChunkRadius(int chunkSize) {
+        Config.chunkSize = chunkSize;
+
+        set("chunkSize", chunkSize);
     }
+
+    public static Config getInstance() {
+        return instance;
+    }
+
 }
