@@ -5,100 +5,10 @@ api-version: '1.20'
 commands:
   gitcraft:
     description: "GitCraft Command"
-    usage: "/gitcraft"
+    usage: "/gitcraft FUCK"
     aliases: []
     permission: gitcraft.command
-    permission-message: "You do not have permission to use this command"
-  gitcraft view <string>:
-    description: "View the open gitcraft commits"
-    usage: "/gitcraft view <world>"
-    aliases: []
-    permission: gitcraft.command
-    permission-message: "You do not have permission to use this command"
-  gitcraft view:
-    description: "List the open gitcraft commits"
-    usage: "/gitcraft view"
-    aliases: []
-    permission: gitcraft.command
-    permission-message: "You do not have permission to use this command"
-  gitcraft accept-commit <string>:
-    description: "Accept the commit of the specified world"
-    usage: "/gitcraft accept-commit <world>"
-    aliases: []
-    permission: gitcraft.commit.manage
-    permission-message: "You do not have permission to use this command"
-  gitcraft reject-commit <string>:
-    description: "Reject the commit of the specified world"
-    usage: "/gitcraft reject-commit <world>"
-    aliases: []
-    permission: gitcraft.commit.manage
-    permission-message: "You do not have permission to use this command"
-  gitcraft checkout:
-    description: "Checkout the current world to a new commit"
-    usage: "/gitcraft checkout"
-    aliases: []
-    permission: gitcraft.commit
-    permission-message: "You do not have permission to use this command"
-  gitcraft commit set-message <string>:
-    description: "Set the commit message"
-    usage: "/gitcraft commit set-message <message>"
-    aliases: []
-    permission: gitcraft.commit
-    permission-message: "You do not have permission to use this command"
-  gitcraft commit view:
-    description: "View the current commit data"
-    usage: "/gitcraft commit view"
-    aliases: []
-    permission: gitcraft.commit
-    permission-message: "You do not have permission to use this command"
-  gitcraft commit contributor list:
-    description: "List the contributors of the current commit"
-    usage: "/gitcraft commit contributor list"
-    aliases: []
-    permission: gitcraft.commit
-    permission-message: "You do not have permission to use this command"
-  gitcraft commit contributor add <string>:
-    description: "Add a contributor to the current commit"
-    usage: "/gitcraft commit contributor add <player>"
-    aliases: []
-    permission: gitcraft.commit
-    permission-message: "You do not have permission to use this command"
-  gitcraft commit contributor remove <string>:
-    description: "Remove a contributor from the current commit"
-    usage: "/gitcraft commit contributor remove <player>"
-    aliases: []
-    permission: gitcraft.commit
-    permission-message: "You do not have permission to use this command"
-  gitcraft commit cancel-commit:
-    description: "Cancel the current commit"
-    usage: "/gitcraft commit cancel-commit"
-    aliases: []
-    permission: gitcraft.commit
-    permission-message: "You do not have permission to use this command"
-  gitcraft config:
-    description: "GitCraft Configuration Command"
-    usage: "/gitcraft config"
-    aliases: []
-    permission: gitcraft.manage
-    permission-message: "You do not have permission to use this command"
-  gitcraft config set-world <string>:
-    description: "Set the main world"
-    usage: "/gitcraft config set-world <world>"
-    aliases: []
-    permission: gitcraft.manage
-    permission-message: "You do not have permission to use this command"
-  gitcraft config set-world:
-    description: "Set the main world to the current world"
-    usage: "/gitcraft config set-world"
-    aliases: []
-    permission: gitcraft.manage
-    permission-message: "You do not have permission to use this command"
-  gitcraft config set-chunk-radius <int>:
-    description: "Set the chunk radius"
-    usage: "/gitcraft config set-chunk-radius <radius>"
-    aliases: []
-    permission: gitcraft.manage
-    permission-message: "You do not have permission to use this command"
+    permission-message: "You do not have the proper permissions"
 permissions:
   gitcraft.command:
     description: "Allows the player to use the gitcraft command"
