@@ -4,6 +4,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import transfem.order.gitcraft.Listeners.Listeners;
 import transfem.order.gitcraft.util.Config;
+import transfem.order.gitcraft.Commands.Commands;
 
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.EventHandler;
@@ -21,7 +22,9 @@ public final class GitCraft extends JavaPlugin {
         //Register Listeners
         getServer().getPluginManager().registerEvents(new Listeners(), this);
 
-        // Register Commands
+        // set command excecutor
+        this.getCommand("gitcraft").setExecutor(new Commands());
+        
         
     }
 
