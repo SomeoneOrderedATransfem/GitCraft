@@ -5,7 +5,7 @@ api-version: '1.20'
 commands:
   gitcraft:
     description: "GitCraft Command"
-    usage: "/gitcraft FUCK"
+    usage: "/gitcraft"
     aliases: []
     permission: gitcraft.command
     permission-message: "You do not have the proper permissions"

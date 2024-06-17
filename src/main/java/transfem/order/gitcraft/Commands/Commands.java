@@ -205,7 +205,7 @@ public class Commands implements CommandExecutor {
                     return true;
                 }
                 if (args.length == 2) {
-                    if (new File(WorldFolder, "git-" + args[1] + ".json").exists()) {
+                    if (new File(WorldFolder, "git-" + args[1] + ".yml").exists()) {
                         // send the player to the world
                         sender.sendMessage("Teleporting to world...");
                         // find the world named git-<args[1]>
@@ -278,7 +278,7 @@ public class Commands implements CommandExecutor {
                 if (args.length == 3) {
                     if (sender.getServer().getWorld("git-" + args[1]) != null) {
                         // delete the json file
-                        new File(WorldFolder, "git-" + args[1] + ".json").delete();
+                        new File(WorldFolder, "git-" + args[1] + ".yml").delete();
                         sender.getServer().getWorld("git-" + args[1]).getWorldFolder().delete();
                         sender.sendMessage("Commit rejected!");
                         return true;
@@ -299,7 +299,7 @@ public class Commands implements CommandExecutor {
                 // create a new world
                 sender.sendMessage("Creating new world...");
                 String worldName = "git-" + Long.toHexString(Double.doubleToLongBits(Math.random()));
-                while  (new File(WorldFolder, "git-"+worldName + ".json").exists()) {
+                while  (new File(WorldFolder, "git-"+worldName + ".yml").exists()) {
                     sender.sendMessage("while loop");
                     worldName = "git-" + Long.toHexString(Double.doubleToLongBits(Math.random()));
                     
@@ -384,7 +384,7 @@ public class Commands implements CommandExecutor {
                         }
                         data.put("message", args[3]);
                         try {
-                            FileWriter writer = new FileWriter("git-" + args[1] + ".json");
+                            FileWriter writer = new FileWriter("git-" + args[1] + ".yml");
                             yaml.dump(data, writer);
                             writer.close();
                         } catch (Exception e) {
@@ -401,7 +401,7 @@ public class Commands implements CommandExecutor {
                     Yaml yaml = new Yaml();
                     FileReader reader = null;
                     try {
-                        reader = new FileReader("git-" + args[1] + ".json");
+                        reader = new FileReader("git-" + args[1] + ".yml");
                     } catch (Exception e) {
                         e.printStackTrace();
                         sender.sendMessage("Error! Please try again later.");
@@ -441,7 +441,7 @@ public class Commands implements CommandExecutor {
                             Yaml yaml = new Yaml();
                             FileReader reader = null;
                             try {
-                                reader = new FileReader("git-" + args[1] + ".json");
+                                reader = new FileReader("git-" + args[1] + ".yml");
                             } catch (Exception e) {
                                 e.printStackTrace();
                                 sender.sendMessage("Error! Please try again later.");
@@ -455,7 +455,7 @@ public class Commands implements CommandExecutor {
                             List<String> contributors = (List<String>) data.get("contributors");
                             contributors.add(cont.getUniqueId().toString());
                             try {
-                                FileWriter writer = new FileWriter("git-" + args[1] + ".json");
+                                FileWriter writer = new FileWriter("git-" + args[1] + ".yml");
                                 yaml.dump(data, writer);
                                 writer.close();
                             } catch (Exception e) {
@@ -480,7 +480,7 @@ public class Commands implements CommandExecutor {
                             Yaml yaml = new Yaml();
                             FileReader reader = null;
                             try {
-                                reader = new FileReader("git-" + args[1] + ".json");
+                                reader = new FileReader("git-" + args[1] + ".yml");
                             } catch (Exception e) {
                                 e.printStackTrace();
                                 sender.sendMessage("Error! Please try again later.");
@@ -502,7 +502,7 @@ public class Commands implements CommandExecutor {
                             if (index != -1) {
                                 contributorsArray.remove(index);
                                 try {
-                                    FileWriter writer = new FileWriter("git-" + args[1] + ".json");
+                                    FileWriter writer = new FileWriter("git-" + args[1] + ".yml");
                                     yaml.dump(data, writer);
                                     writer.close();
                                 } catch (Exception e) {
@@ -515,7 +515,7 @@ public class Commands implements CommandExecutor {
                                 sender.sendMessage("Contributor not found!");
                             }
                             try {
-                                FileWriter writer = new FileWriter("git-" + args[1] + ".json");
+                                FileWriter writer = new FileWriter("git-" + args[1] + ".yml");
                                 yaml.dump(data, writer);
                                 writer.close();
                             } catch (Exception e) {
@@ -531,7 +531,7 @@ public class Commands implements CommandExecutor {
                         Yaml yaml = new Yaml();
                         FileReader reader = null;
                         try {
-                            reader = new FileReader("git-" + args[1] + ".json");
+                            reader = new FileReader("git-" + args[1] + ".yml");
                         } catch (Exception e) {
                             e.printStackTrace();
                             sender.sendMessage("Error! Please try again later.");
@@ -548,7 +548,7 @@ public class Commands implements CommandExecutor {
                         Yaml yaml = new Yaml();
                         FileReader reader = null;
                         try {
-                            reader = new FileReader("git-" + args[1] + ".json");
+                            reader = new FileReader("git-" + args[1] + ".yml");
                         } catch (Exception e) {
                             e.printStackTrace();
                             sender.sendMessage("Error! Please try again later.");
@@ -559,7 +559,7 @@ public class Commands implements CommandExecutor {
                             sender.sendMessage("You are not the author of this commit!");
                             return false;
                         }
-                        new File(WorldFolder, "git-" + args[1] + ".json").delete();
+                        new File(WorldFolder, "git-" + args[1] + ".yml").delete();
                         sender.getServer().getWorld("git-" + args[1]).getWorldFolder().delete();
                         sender.sendMessage("Commit cancelled!");
                         return true;
