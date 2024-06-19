@@ -19,7 +19,7 @@ import java.io.IOException;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 
-public class Listeners implements Listener {
+public class BlockListeners implements Listener {
 
         private void logChunk(BlockEvent event) {
             if (event.getBlock().getWorld().getName().startsWith("git") && new File(event.getBlock().getWorld().getName() + ".json").exists()) {

@@ -4,7 +4,8 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.EventHandler;
 
-import transfem.order.gitcraft.Listeners.Listeners;
+import transfem.order.gitcraft.Listeners.BlockListeners;
+import transfem.order.gitcraft.Listeners.PlayerListeners;
 import transfem.order.gitcraft.util.Config;
 import transfem.order.gitcraft.Commands.Commands;
 import transfem.order.gitcraft.Commands.CommandsTabCompleter;
@@ -26,13 +27,17 @@ public final class GitCraft extends JavaPlugin {
         if (!commitFolder.exists()) {
             commitFolder.mkdir();
         }
+        File inventoryFolder = new File(getDataFolder(), "inventory");
+        if (!inventoryFolder.exists()) {
+            inventoryFolder.mkdir();
+        }
         // Load Config
         Config.load();
 
         //Register Listeners
-        getServer().getPluginManager().registerEvents(new Listeners(), this);
+        getServer().getPluginManager().registerEvents(new BlockListeners(), this);
+        getServer().getPluginManager().registerEvents(new PlayerListeners(), this);
 
-        // set command excecutor
         this.getCommand("gitcraft").setExecutor(new Commands());
 
         // set tab completer
@@ -49,10 +54,4 @@ public final class GitCraft extends JavaPlugin {
     public void onDisable() {
         // Plugin shutdown logic
     }
-
-    @EventHandler
-    public void onPlayerJoin(PlayerJoinEvent event) {
-        // Check for if player is in
-    }
-
 }

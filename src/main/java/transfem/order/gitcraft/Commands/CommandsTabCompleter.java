@@ -6,10 +6,13 @@ import org.bukkit.command.TabCompleter;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.yaml.snakeyaml.Yaml;
 
 import java.util.List;
 import java.util.Arrays;
 import java.io.File;
+import java.io.FileReader;
+import java.util.ArrayList;
 
 import transfem.order.gitcraft.GitCraft;
 
@@ -40,61 +43,112 @@ public class CommandsTabCompleter implements TabCompleter {
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
-        if (sender instanceof Player) {
+        if (!(sender instanceof Player)) return null;
+        if (args.length == 0) {
+            if (sender.hasPermission("gitcraft.manage")) {
+                return Arrays.asList("help", "config", "view", "accept-commit", "reject-commit", "commit", "checkout");
+            }
+            if (sender.hasPermission("gitcraft.commit.manage")) {
+                return Arrays.asList("help", "view", "accept-commit", "reject-commit", "commit", "checkout");
+            }
+            if (sender.hasPermission("gitcraft.commit")) {
+                return Arrays.asList("help", "view", "commit", "checkout");
+            }
+            if (sender.hasPermission("gitcraft.commands")) {
+                return Arrays.asList("help", "view");
+            }
+        } 
+        if (sender.hasPermission("gitcraft.manage") && args[0].equalsIgnoreCase("config")) {
             if (args.length == 1) {
-                if (sender.hasPermission("gitcraft.manage")) {
-                    return Arrays.asList("help", "config", "view", "accept-commit", "reject-commit", "checkout", "commit");
+                return Arrays.asList("set-world", "set-chunk-size", "view");
+            }
+            if (args.length == 2) {
+                if (args[1].equalsIgnoreCase("set-world")) {
+                    return Arrays.asList("world");
                 }
-                if (sender.hasPermission("gitcraft.commit.manage")) {
-                    return Arrays.asList("help", "commit", "view", "accept-commit", "reject-commit", "checkout");
+                if (args[1].equalsIgnoreCase("set-chunk-size")) {
+                    return Arrays.asList("size");
                 }
-                if (sender.hasPermission("gitcraft.commit")){
-                    return Arrays.asList("help", "commit", "view", "checkout");
+                if (args[1].equalsIgnoreCase("view")) {
+                    return null;
                 }
-                if (sender.hasPermission("gitcraft.command")){
-                    return Arrays.asList("help", "view", "commit");
+                if (args[1].equalsIgnoreCase("set-return-location")) {
+                    return null;
                 }
-                return Arrays.asList("help", "config", "view", "accept-commit", "reject-commit", "checkout", "commit");
-            } else if (args.length == 2) {
-                if (args[0].equalsIgnoreCase("config")) {
-                    return Arrays.asList("set-world", "set-chunk-size", "view");
-                } else if (args[0].equalsIgnoreCase("view") || args[0].equalsIgnoreCase("accept-commit") || args[0].equalsIgnoreCase("reject-commit")) {
-                    String[] worlds = new String[commitFolder.listFiles().length];
-                    for (int i = 0; i < commitFolder.listFiles().length; i++) {
-                        worlds[i] = commitFolder.listFiles()[i].getName().replace(".json", "");
-                    }
-                    return Arrays.asList(worlds);
-                } else if (args[0].equalsIgnoreCase("commit")) {
-                    return Arrays.asList("set-message", "view", "contributor", "cancel-commit");
+            }
+        }
+        if (args[0].equalsIgnoreCase("view")) {
+            if (args.length == 1) {
+                List<String> temp = new ArrayList<>();
+                for (File file : commitFolder.listFiles()) {
+                    temp.add(file.getName().split(".")[0]);
                 }
-            } else if (args.length == 3) {
-                if (args[0].equalsIgnoreCase("config")) {
-                    if (args[1].equalsIgnoreCase("set-world")) {
-                        String[] worlds = new String[commitFolder.listFiles().length];
-                        for (int i = 0; i < commitFolder.listFiles().length; i++) {
-                            worlds[i] = commitFolder.listFiles()[i].getName().replace(".json", "");
-                        }
-                        return Arrays.asList(worlds);
-                    } else if (args[1].equalsIgnoreCase("set-chunk-size")) {
-                        return null;
-                    }
-                } else if (args[0].equalsIgnoreCase("commit")) {
-                    if (args[1].equalsIgnoreCase("set-message")) {
-                        return Arrays.asList("<message>");
-                    } else if (args[1].equalsIgnoreCase("contributor")) {
-                        return Arrays.asList("add", "remove", "list");
-                    }
+                return temp;
+            }
+        }
+        if (args[0].equalsIgnoreCase("accept-commit")) {
+            if (args.length == 1) {
+                List<String> temp = new ArrayList<>();
+                for (File file : commitFolder.listFiles()) {
+                    temp.add(file.getName().split(".")[0]);
                 }
-            } else if (args.length == 4) {
-                if (args[0].equalsIgnoreCase("commit")) {
-                    if (args[1].equalsIgnoreCase("contributor")) {
-                        if (args[2].equalsIgnoreCase("add") || args[2].equalsIgnoreCase("remove")) {
-                            String[] players = new String[GitCraft.getInstance().getServer().getOnlinePlayers().size()];
-                            for (int i = 0; i < GitCraft.getInstance().getServer().getOnlinePlayers().size(); i++) {
-                                players[i] = GitCraft.getInstance().getServer().getOnlinePlayers().toArray(new Player[0])[i].getName();
+                return temp;
+            }
+        }
+        if (args[0].equalsIgnoreCase("reject-commit")) {
+            if (args.length == 1) {
+                List<String> temp = new ArrayList<>();
+                for (File file : commitFolder.listFiles()) {
+                    temp.add(file.getName().split(".")[0]);
+                }
+                return temp;
+            }
+            if (args.length == 2) {
+                return null;
+            }
+        }
+        if (args[0].equalsIgnoreCase("commit")) {
+            if (args.length == 1) {
+                return Arrays.asList("set-message", "view", "contributor", "cancel-commit");
+            }
+            if (args.length == 2) {
+                if (args[1].equalsIgnoreCase("set-message")) {
+                    return Arrays.asList("message");
+                }
+                if (args[1].equalsIgnoreCase("contributor")) {
+                    return Arrays.asList("add", "remove", "list");
+                }
+            }
+            if (args.length == 3) {
+                if (args[1].equalsIgnoreCase("contributor")) {
+                    if (args[2].equalsIgnoreCase("add")) {
+                        List<String> temp = new ArrayList<>();
+                        Yaml yaml = new Yaml();
+                        try (FileReader reader = new FileReader(new File(commitFolder, ((Player) sender).getWorld().getName()+".yml"))) {
+                            for (Player player : GitCraft.getInstance().getServer().getOnlinePlayers()) {
+                                if (!((List<String>) yaml.load(reader)).contains(player.getUniqueId().toString())) {
+                                    temp.add(player.getName());
+                                }
                             }
-                            return Arrays.asList(players);
+                        } catch (Exception e) {
+                            e.printStackTrace();
                         }
+                        return temp;
+                    }
+                    if (args[2].equalsIgnoreCase("remove")) {
+                        List<String> temp = new ArrayList<>();
+                        Yaml yaml = new Yaml();
+                        try (FileReader reader = new FileReader(new File(commitFolder, ((Player) sender).getWorld().getName()+".yml"))) {
+                            for (String uuid : (List<String>) yaml.load(reader)) {
+                                temp.add(sender.getServer().getOfflinePlayer(uuid).getName());
+                            }
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                        return temp;
+                    }
+                    if (args[2].equalsIgnoreCase("list")) {
+                        return null;
                     }
                 }
             }
