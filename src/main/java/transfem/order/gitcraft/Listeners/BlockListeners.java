@@ -5,67 +5,67 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockEvent;
+import org.yaml.snakeyaml.Yaml;
+
 import java.io.File;
-import com.google.gson.Gson;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonArray;
-import org.bukkit.Chunk;
 import java.io.FileWriter;
-import java.io.IOException;
-
-
-
-import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import transfem.order.gitcraft.GitCraft;
 
 public class BlockListeners implements Listener {
 
-        private void logChunk(BlockEvent event) {
-            if (event.getBlock().getWorld().getName().startsWith("git") && new File(event.getBlock().getWorld().getName() + ".json").exists()) {
-                // Check if the chunk the block is in already in the chunks array in the json file
-                try {
-                    FileReader reader = new FileReader(event.getBlock().getWorld().getName() + ".json");
-                    Gson gson = new Gson();
-                    // Check if the chunk id is in the json file
-                    // if it is, do nothing
-                    // else add the chunk id to the json file
-                    Chunk chunk = event.getBlock().getChunk();
-                    String chunkId = chunk.getX() + "_" + chunk.getZ();
-                    JsonElement jsonElement = gson.fromJson(reader, JsonElement.class);
-                    JsonObject jsonObject = jsonElement.getAsJsonObject();
-                    JsonArray chunksArray = jsonObject.getAsJsonArray("chunks");
-                    if (!chunksArray.contains(gson.toJsonTree(chunkId))) {
-                        // Chunk id is not in the json file, add it
-                        chunksArray.add(chunkId);
-                        // Save the updated json file
-                        try {
-                            FileWriter writer = new FileWriter(event.getBlock().getWorld().getName() + ".json");
-                            gson.toJson(jsonObject, writer);
-                            writer.close();
+    private static final Logger logger = GitCraft.getInstance().getLogger();
+
+    private void logChunk(BlockEvent event) {
+        String worldName = event.getBlock().getWorld().getName();
+        if (worldName.startsWith("git")) {
+            File yamlFile = new File(GitCraft.getInstance().getDataFolder(), worldName + ".yml");
+            if (yamlFile.exists()) {
+                try (FileReader reader = new FileReader(yamlFile)) {
+                    Yaml yaml = new Yaml();
+                    Map<String, Object> data = yaml.load(reader);
+
+                    int blockY = event.getBlock().getY();
+                    int minY = Integer.parseInt(data.get("minY").toString());
+                    int maxY = Integer.parseInt(data.get("maxY").toString());
+
+                    if (blockY < minY) data.put("minY", blockY);
+                    if (blockY > maxY) data.put("maxY", blockY);
+
+                    List<String> chunks = (List<String>) data.get("chunks");
+                    String chunkKey = String.valueOf(event.getBlock().getChunk().getChunkKey());
+
+                    if (!chunks.contains(chunkKey)) {
+                        chunks.add(chunkKey);
+                        data.put("chunks", chunks);
+
+                        try (FileWriter writer = new FileWriter(yamlFile)) {
+                            yaml.dump(data, writer);
                         } catch (IOException e) {
-                            e.printStackTrace();
+                            logger.log(Level.SEVERE, "Error writing to YAML file: " + yamlFile.getName(), e);
                         }
                     }
 
-
-                } catch (FileNotFoundException e) {
-                    e.printStackTrace();
+                } catch (IOException e) {
+                    logger.log(Level.SEVERE, "Error reading YAML file: " + yamlFile.getName(), e);
                 }
-
-
-
-
             }
         }
+    }
 
-        @EventHandler
-        public void onBlockPlace(BlockPlaceEvent event){
-            logChunk(event);
-        }
+    @EventHandler
+    public void onBlockPlace(BlockPlaceEvent event) {
+        logChunk(event);
+    }
 
-        @EventHandler
-        public void onBlockBreak(BlockBreakEvent event) {
-            logChunk(event);
-        }
+    @EventHandler
+    public void onBlockBreak(BlockBreakEvent event) {
+        logChunk(event);
+    }
 }

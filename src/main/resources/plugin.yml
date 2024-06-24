@@ -5,17 +5,17 @@ api-version: '1.20'
 commands:
   gitcraft:
     description: "GitCraft Command"
-    usage: "You do not have the proper permissions"
+    usage: "/<command> [arguments]"
     aliases: []
     permission: gitcraft.command
     permission-message: "You do not have the proper permissions"
 permissions:
   gitcraft.command:
     description: "Allows the player to use the gitcraft command"
-    default: true
+    default: op
   gitcraft.commit:
     description: "Allows the player to use the commit commands"
-    default: false
+    default: op
   gitcraft.commit.manage:
     description: "Allows the player to manage the commits"
     default: op

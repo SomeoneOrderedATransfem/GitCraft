@@ -73,6 +73,10 @@ public class Config {
 
     public static void setReturnLocation(Location location) {
         returnLocation = location;
+
+        set("returnLocation.x", location.getX());
+        set("returnLocation.y", location.getY());
+        set("returnLocation.z", location.getZ());
     }
 
     public static void setWorld(String worldName) {
