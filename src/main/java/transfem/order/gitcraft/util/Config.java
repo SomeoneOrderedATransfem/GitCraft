@@ -77,6 +77,7 @@ public class Config {
         set("returnLocation.x", location.getX());
         set("returnLocation.y", location.getY());
         set("returnLocation.z", location.getZ());
+        set("returnLocation.world", location.getWorld().getName());
     }
 
     public static void setWorld(String worldName) {

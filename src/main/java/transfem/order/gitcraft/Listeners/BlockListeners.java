@@ -22,7 +22,7 @@ public class BlockListeners implements Listener {
 
     private static final Logger logger = GitCraft.getInstance().getLogger();
 
-    private void logChunk(BlockEvent event) {
+    private void logRegion(BlockEvent event) {
         String worldName = event.getBlock().getWorld().getName();
         if (worldName.startsWith("git")) {
             File yamlFile = new File(GitCraft.getInstance().getDataFolder(), worldName + ".yml");
@@ -38,12 +38,14 @@ public class BlockListeners implements Listener {
                     if (blockY < minY) data.put("minY", blockY);
                     if (blockY > maxY) data.put("maxY", blockY);
 
-                    List<String> chunks = (List<String>) data.get("chunks");
-                    String chunkKey = String.valueOf(event.getBlock().getChunk().getChunkKey());
+                    List<String> regions = (List<String>) data.get("regions");
+                    int regionX = event.getBlock().getX() >> 9;
+                    int regionZ = event.getBlock().getZ() >> 9;
+                    String regionKey = regionX + "," + regionZ;
 
-                    if (!chunks.contains(chunkKey)) {
-                        chunks.add(chunkKey);
-                        data.put("chunks", chunks);
+                    if (!regions.contains(regionKey)) {
+                        regions.add(regionKey);
+                        data.put("regions", regions);
 
                         try (FileWriter writer = new FileWriter(yamlFile)) {
                             yaml.dump(data, writer);
@@ -61,11 +63,11 @@ public class BlockListeners implements Listener {
 
     @EventHandler
     public void onBlockPlace(BlockPlaceEvent event) {
-        logChunk(event);
+        logRegion(event);
     }
 
     @EventHandler
     public void onBlockBreak(BlockBreakEvent event) {
-        logChunk(event);
+        logRegion(event);
     }
 }

@@ -13,19 +13,21 @@ import org.bukkit.WorldType;
 import org.bukkit.World;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
-import org.bukkit.Chunk;
-import org.bukkit.OfflinePlayer;
 import org.bukkit.GameMode;
+import org.bukkit.Chunk;
 import org.bukkit.ChunkSnapshot;
+import org.bukkit.OfflinePlayer;
 
 import java.io.File;
-import java.io.FilenameFilter;
-import java.io.FileWriter;
-import java.io.FileReader;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.Map;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.io.FileReader;
+import java.io.FileWriter;
 
 import org.yaml.snakeyaml.Yaml;
 
@@ -68,7 +70,6 @@ public class Commands implements CommandExecutor {
                     "\u00A73/gitcraft help - \u00A7fDisplays this message",
                     "\u00A73/gitcraft config set-world <world> - \u00A7fSet the world to use for GitCraft",
                     "\u00A73/gitcraft config set-world - \u00A7fSet the world to use for GitCraft to this world",
-                    "\u00A73/gitcraft config set-chunk-radius <radius> - \u00A7fSet the chunk radius for GitCraft",
                     "\u00A73/gitcraft config set-return-location - \u00A7fSet the return location for GitCraft",
                     "\u00A73/gitcraft config view - \u00A7fView the current configuration of GitCraft",
                     "\u00A73/gitcraft view - \u00A7fList all worlds",
@@ -105,8 +106,6 @@ public class Commands implements CommandExecutor {
                 return handlePermissionsCommands(sender, args);
             case "set-world":
                 return setWorld(sender, args);
-            case "set-chunk-radius":
-                return setChunkRadius(sender, args);
             case "set-return-location":
                 return setReturnLocation(sender);
             default:
@@ -182,21 +181,6 @@ public class Commands implements CommandExecutor {
                 Config.set("worldName", args[2]);
                 sender.sendMessage("\u00A73World set to \u00A7f\u00A7l" + args[2]);
             }
-        }
-        return true;
-    }
-
-    private boolean setChunkRadius(CommandSender sender, String[] args) {
-        if (args.length == 2) {
-            sender.sendMessage("Usage: /gitcraft config set-chunk-radius <radius>");
-            return true;
-        }
-        try {
-            int radius = Integer.parseInt(args[2]);
-            Config.set("chunkSize", radius);
-            sender.sendMessage("\u00A73Chunk radius set to \u00A7f\u00A7l" + radius);
-        } catch (NumberFormatException e) {
-            sender.sendMessage("\u00A7cInvalid radius");
         }
         return true;
     }
@@ -325,14 +309,14 @@ public class Commands implements CommandExecutor {
             creator.type(WorldType.FLAT);
             creator.generator(new GitCraftChunkGenerator());
             World commitWorld = creator.createWorld();
-            player.teleport(new Location(commitWorld, player.getLocation().getX(), player.getLocation().getY(), player.getLocation().getZ()));
 
             // Save the player's inventory to a file
             File inventoryFolder = new File(GitCraft.getInstance().getDataFolder(), "inventory");
-            File inventoryFile = new File(inventoryFolder, player.getUniqueId().toString() + ".yml");
+            File inventoryFile = new File(inventoryFolder, player.getUniqueId() + ".yml");
             if (inventoryFile.exists()) {
                 inventoryFile.delete();
             }
+            inventoryFile.createNewFile();
             try (FileWriter inventoryWriter = new FileWriter(inventoryFile)) {
                 Yaml inventoryYaml = new Yaml();
                 inventoryYaml.dump(player.getInventory().getContents(), inventoryWriter);
@@ -344,11 +328,7 @@ public class Commands implements CommandExecutor {
             int radius = Config.getRadius();
             for (int x = -radius; x <= radius; x++) {
                 for (int z = -radius; z <= radius; z++) {
-                    for (int y = -62; y < 256; y++) {
-                        Location originalLocation = new Location(originalWorld, player.getLocation().getX() + x * 16, y, player.getLocation().getZ() + z * 16);
-                        Location newLocation = new Location(commitWorld, player.getLocation().getX() + x * 16, y, player.getLocation().getZ() + z * 16);
-                        newLocation.getBlock().setType(originalLocation.getBlock().getType());
-                    }
+                    copyRegionToNewWorld(originalWorld, commitWorld, player, x, z);
                 }
             }
             player.setGameMode(GameMode.CREATIVE);
@@ -629,5 +609,24 @@ public class Commands implements CommandExecutor {
             worldFolder.delete();
         }
         return true;
+    }
+
+    private void copyRegionToNewWorld(World sourceWorld, World destWorld, Player player, int regionX, int regionZ) {
+        String sourceRegionFile = String.format("r.%d.%d.mca", regionX, regionZ);
+        File sourceFile = new File(sourceWorld.getWorldFolder(), "region/" + sourceRegionFile);
+        File destFile = new File(destWorld.getWorldFolder(), "region/" + sourceRegionFile);
+
+        if (sourceFile.exists()) {
+            try {
+                Files.createDirectories(destFile.getParentFile().toPath());
+                Files.copy(sourceFile.toPath(), destFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                player.sendMessage("\u00A73Region " + sourceRegionFile + " copied successfully.");
+            } catch (IOException e) {
+                player.sendMessage("\u00A7cFailed to copy region " + sourceRegionFile + ": " + e.getMessage());
+                e.printStackTrace();
+            }
+        } else {
+            player.sendMessage("\u00A7cSource region file " + sourceRegionFile + " does not exist.");
+        }
     }
 }

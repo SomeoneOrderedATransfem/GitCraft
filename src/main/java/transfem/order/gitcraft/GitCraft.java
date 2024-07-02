@@ -11,6 +11,10 @@ import transfem.order.gitcraft.Commands.Commands;
 import transfem.order.gitcraft.Commands.CommandsTabCompleter;
 
 import java.io.File;
+import java.nio.channels.FileChannel;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.FileInputStream;
 
 public final class GitCraft extends JavaPlugin {
 
@@ -22,9 +26,19 @@ public final class GitCraft extends JavaPlugin {
         createDirectory(commitFolder);
         File inventoryFolder = new File(getDataFolder(), "inventory");
         createDirectory(inventoryFolder);
+        File acceptedFolder = new File(getDataFolder(), "accepted");
+        createDirectory(acceptedFolder);
 
         // Load worlds from commit folder
         loadCommitWorlds(commitFolder);
+
+
+        // Apply Accepted Commits
+        for (File file : acceptedFolder.listFiles()) {
+            if (file.getName().endsWith(".mca")) {
+                loadAcceptedCommit(file);
+            }
+        }
 
         // Load configuration
         Config.load();
@@ -62,8 +76,31 @@ public final class GitCraft extends JavaPlugin {
         getCommand("gitcraft").setTabCompleter(new CommandsTabCompleter());
     }
 
+    private void loadAcceptedCommit(File file) {
+        File sourceWorldPath = new File(getDataFolder(), "accepted");
+        File destinationWorldPath = new File(getDataFolder(), Config.getWorld());
+        String regionFileName = file.getName();
+
+        File sourceFile = new File(sourceWorldPath, regionFileName);
+        File destinationFile = new File(destinationWorldPath, regionFileName);
+
+        try {
+            copyFileUsingChannel(sourceFile, destinationFile);
+            System.out.println("Region file copied successfully.");
+        } catch (IOException e) {
+            e.printStackTrace(System.out);
+        }
+    }
+
     public static GitCraft getInstance() {
         return JavaPlugin.getPlugin(GitCraft.class);
+    }
+
+    private static void copyFileUsingChannel(File source, File dest) throws IOException {
+        try (FileChannel sourceChannel = new FileInputStream(source).getChannel();
+             FileChannel destChannel = new FileOutputStream(dest).getChannel()) {
+            destChannel.transferFrom(sourceChannel, 0, sourceChannel.size());
+        }
     }
 
     @Override
