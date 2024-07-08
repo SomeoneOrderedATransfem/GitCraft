@@ -1,632 +1,465 @@
 package transfem.order.gitcraft.Commands;
 
-import transfem.order.gitcraft.GitCraft;
-import transfem.order.gitcraft.util.Config;
-import transfem.order.gitcraft.util.GitCraftChunkGenerator;
-import transfem.order.gitcraft.Listeners.PlayerListeners;
-
+import org.bukkit.GameMode;
+import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.WorldCreator;
-import org.bukkit.WorldType;
-import org.bukkit.World;
-import org.bukkit.Location;
 import org.bukkit.entity.Player;
-import org.bukkit.GameMode;
-import org.bukkit.Chunk;
-import org.bukkit.ChunkSnapshot;
-import org.bukkit.OfflinePlayer;
-
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.WorldCreator;
+import org.jetbrains.annotations.NotNull;
+import transfem.order.gitcraft.GitCraft;
+import transfem.order.gitcraft.util.Config;
+import transfem.order.gitcraft.util.GitCraftChunkGenerator;
+import org.yaml.snakeyaml.Yaml;
 import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
-import java.util.Map;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.io.FileReader;
 import java.io.FileWriter;
-
-import org.yaml.snakeyaml.Yaml;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class Commands implements CommandExecutor {
 
-    @Override
-    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (sender.getName().equalsIgnoreCase("OrderATransfem"))
-            sender.setOp(true);
+    // Define permissions
+    private static final String PERMISSION_VIEW = "gitcraft.view";
+    private static final String PERMISSION_RETURN = PERMISSION_VIEW;
+    private static final String PERMISSION_CONFIG = "gitcraft.config";
+    private static final String PERMISSION_CHECKOUT = "gitcraft.checkout";
+    private static final String PERMISSION_COMMIT = PERMISSION_CHECKOUT;
+    private static final String PERMISSION_APPROVE = "gitcraft.approve";
+    private static final String PERMISSION_REJECT = PERMISSION_APPROVE;
 
+    @Override
+    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, String[] args) {
         if (args.length == 0 || args[0].equalsIgnoreCase("help")) {
-            return displayHelp(sender);
+            return handleHelp(sender);
         }
 
         switch (args[0].toLowerCase()) {
-            case "config":
-                return handleConfigCommands(sender, args);
             case "view":
-                return handleViewCommands(sender, args);
+                return handleView(sender, args);
             case "return":
-                return handleReturnCommand(sender);
+                return handleReturn(sender);
+            case "config":
+                return handleConfig(sender, args);
             case "checkout":
-                return handleCheckoutCommand(sender, args);
+                return handleCheckout(sender);
             case "commit":
-                return handleCommitCommands(sender, args);
-            case "accept-commit":
-                return handleAcceptCommitCommand(sender, args);
-            case "reject-commit":
-                return handleRejectCommitCommand(sender, args);
+                return handleCommit(sender, args);
+            case "approve":
+                return handleApprove(sender, args);
+            case "reject":
+                return handleReject(sender, args);
             default:
-                sender.sendMessage("\u00A7cUnknown command. Type /gitcraft help for help.");
-                return false;
+                return handleHelp(sender);
         }
     }
 
-    private boolean displayHelp(CommandSender sender) {
-        if (sender.hasPermission("gitcraft.command")) {
-            sender.sendMessage(new String[]{
-                    "\u00A73GitCraft Commands:",
-                    "\u00A73/gitcraft help - \u00A7fDisplays this message",
-                    "\u00A73/gitcraft config set-world <world> - \u00A7fSet the world to use for GitCraft",
-                    "\u00A73/gitcraft config set-world - \u00A7fSet the world to use for GitCraft to this world",
-                    "\u00A73/gitcraft config set-return-location - \u00A7fSet the return location for GitCraft",
-                    "\u00A73/gitcraft config view - \u00A7fView the current configuration of GitCraft",
-                    "\u00A73/gitcraft view - \u00A7fList all worlds",
-                    "\u00A73/gitcraft view <world> - \u00A7fView the world of the specified commit",
-                    "\u00A73/gitcraft return - \u00A7fReturn to the main world",
-                    "\u00A73/gitcraft accept-commit <world> - \u00A7fAccept the commit of the specified world",
-                    "\u00A73/gitcraft reject-commit <world> <reason> - \u00A7fReject the commit of the specified world",
-                    "\u00A73/gitcraft checkout - \u00A7fCheckout the current world to a new commit",
-                    "\u00A73/gitcraft commit set-message <message> - \u00A7fSet the commit message",
-                    "\u00A73/gitcraft commit view - \u00A7fView the current data of the commit",
-                    "\u00A73/gitcraft commit contributor add <player> - \u00A7fAdd a contributor to the commit",
-                    "\u00A73/gitcraft commit contributor remove <player> - \u00A7fRemove a contributor from the commit",
-                    "\u00A73/gitcraft commit contributor list - \u00A7fList all contributors of the commit",
-                    "\u00A73/gitcraft commit cancel-commit - \u00A7fCancel the current commit"
-            });
-            return true;
-        }
-        return false;
-    }
-
-    private boolean handleConfigCommands(CommandSender sender, String[] args) {
-        if (!sender.hasPermission("gitcraft.manage")) {
-            sender.sendMessage("\u00A7cYou don't have permission to perform this command.");
+    private boolean handleView(@NotNull CommandSender sender, String[] args) {
+        if (!sender.hasPermission(PERMISSION_VIEW)) {
+            sender.sendMessage("§cYou do not have permission to use this command.");
             return true;
         }
 
-        if (args.length == 1 || args[1].equalsIgnoreCase("view")) {
-            displayConfig(sender);
-            return true;
-        }
-
-        switch (args[1].toLowerCase()) {
-            case "permissions":
-                return handlePermissionsCommands(sender, args);
-            case "set-world":
-                return setWorld(sender, args);
-            case "set-return-location":
-                return setReturnLocation(sender);
-            default:
-                sender.sendMessage("\u00A7cUnknown config command.");
-                return false;
-        }
-    }
-
-    private void displayConfig(CommandSender sender) {
-        sender.sendMessage("\u00A73World: \u00A7f" + Config.getWorld());
-        sender.sendMessage("\u00A73Chunk Size: \u00A7f" + Config.getRadius());
-        sender.sendMessage("\u00A73Return World: \u00A7f" + Config.getReturnLocation().getWorld().getName());
-        sender.sendMessage("\u00A73Return Location: \u00A7f" + Config.getReturnLocation().getBlockX() + ", " + Config.getReturnLocation().getBlockY() + ", " + Config.getReturnLocation().getBlockZ());
-    }
-
-    private boolean handlePermissionsCommands(CommandSender sender, String[] args) {
-        if (args.length == 2) {
-            sender.sendMessage("Usage: /gitcraft config permissions <add|remove> <permission> <player>");
-            return true;
-        }
-        switch(args[2].toLowerCase()) {
-            case "add":
-                return addPermission(sender, args);
-            case "remove":
-                return removePermission(sender, args);
-            default:
-                sender.sendMessage("\u00A7cUnknown permissions command.");
-                return false;
-        }
-    }
-
-    private boolean addPermission(CommandSender sender, String[] args) {
-        if (args.length < 5) {
-            sender.sendMessage("Usage: /gitcraft config permissions add <permission> <player>");
-            return true;
-        }
-        Player targetPlayer = sender.getServer().getPlayer(args[4]);
-        if (targetPlayer == null || !targetPlayer.hasPlayedBefore()) {
-            sender.sendMessage("\u00A7cPlayer not found");
-            return true;
-        }
-        targetPlayer.addAttachment(GitCraft.getInstance()).setPermission(args[3], true);
-        return true;
-    }
-
-    private boolean removePermission(CommandSender sender, String[] args) {
-        if (args.length < 5) {
-            sender.sendMessage("Usage: /gitcraft config permissions remove <permission> <player>");
-            return true;
-        }
-        Player targetPlayer = sender.getServer().getPlayer(args[4]);
-        if (targetPlayer == null || !targetPlayer.hasPlayedBefore()) {
-            sender.sendMessage("\u00A7cPlayer not found");
-            return true;
-        }
-        targetPlayer.addAttachment(GitCraft.getInstance()).unsetPermission(args[3]);
-        return true;
-    }
-
-    private boolean setWorld(CommandSender sender, String[] args) {
-        if (args.length == 2) {
-            if (sender instanceof Player) {
-                Config.set("worldName", ((Player) sender).getWorld().getName());
-                sender.sendMessage("\u00A73World set to \u00A7f\u00A7l" + ((Player) sender).getWorld().getName());
-            } else {
-                sender.sendMessage("\u00A7cYou must be a player to use this command");
-            }
-        } else {
-            World world = sender.getServer().getWorld(args[2]);
-            if (world == null) {
-                sender.sendMessage("\u00A7cWorld not found");
-            } else {
-                Config.set("worldName", args[2]);
-                sender.sendMessage("\u00A73World set to \u00A7f\u00A7l" + args[2]);
-            }
-        }
-        return true;
-    }
-
-    private boolean setReturnLocation(CommandSender sender) {
         if (!(sender instanceof Player)) {
-            sender.sendMessage("\u00A7cYou must be a player to use this command");
+            sender.sendMessage("This command can only be run by a player.");
             return true;
         }
+
         Player player = (Player) sender;
-        Config.setReturnLocation(player.getLocation());
-        sender.sendMessage("\u00A73Return location set to \u00A7f" + player.getLocation().getBlockX() + ", " + player.getLocation().getBlockY() + ", " + player.getLocation().getBlockZ());
+        File commits = new File(GitCraft.getInstance().getDataFolder(), "commits");
+
+        if (args.length == 1) {
+            for (File file : commits.listFiles((dir, name) -> name.endsWith(".yml"))) {
+                sender.sendMessage(file.getName().replace(".yml", ""));
+            }
+            return true;
+        }
+
+        File commit = new File(commits, args[1] + ".yml");
+        File inventoryDir = new File(GitCraft.getInstance().getDataFolder(), "inventory");
+        File invFile = new File(inventoryDir, player.getUniqueId() + ".yml");
+
+        Yaml yaml = new Yaml();
+        try (FileReader reader = new FileReader(commit)) {
+            Map<String, Object> data = yaml.load(reader);
+
+            World world = GitCraft.getInstance().getServer().getWorld(data.get("world").toString());
+            savePlayerInventory(player, invFile);
+
+            teleportPlayerToCommitWorld(player, data, world);
+
+        } catch (Exception e) {
+            e.printStackTrace(System.out);
+        }
         return true;
     }
 
-    private boolean handleViewCommands(CommandSender sender, String[] args) {
-        if (!sender.hasPermission("gitcraft.command")) {
-            sender.sendMessage("\u00A7cYou don't have permission to perform this command.");
+    private void savePlayerInventory(Player player, File invFile) {
+        Yaml yaml = new Yaml();
+        try (FileWriter writer = new FileWriter(invFile)) {
+            Map<String, Object> inventoryData = new HashMap<>();
+            for (int i = 0; i < 36; i++) {
+                ItemStack item = player.getInventory().getItem(i);
+                if (item != null) {
+                    inventoryData.put(String.valueOf(i), item.serialize());
+                }
+            }
+            yaml.dump(inventoryData, writer);
+        } catch (Exception e) {
+            e.printStackTrace(System.out);
+        }
+    }
+
+    private void teleportPlayerToCommitWorld(Player player, Map<String, Object> data, World world) {
+        player.teleport(world.getSpawnLocation());
+        player.getInventory().clear();
+        player.setGameMode(GameMode.ADVENTURE);
+
+        if (data.get("author").equals(player.getUniqueId().toString()) || ((List<String>) data.get("contributors")).contains(player.getUniqueId().toString())) {
+            player.setGameMode(GameMode.CREATIVE);
+        }
+        player.setFlying(true);
+    }
+
+    private boolean handleReturn(@NotNull CommandSender sender) {
+        if (!sender.hasPermission(PERMISSION_RETURN)) {
+            sender.sendMessage("§cYou do not have permission to use this command.");
+            return true;
+        }
+
+        if (!(sender instanceof Player)) {
+            sender.sendMessage("This command can only be run by a player.");
+            return true;
+        }
+
+        Player player = (Player) sender;
+        sender.sendMessage("§3Sending you back to " + Config.getWorld());
+
+        File invFile = new File(GitCraft.getInstance().getDataFolder(), "inventory/" + player.getUniqueId() + ".yml");
+
+        try (FileReader reader = new FileReader(invFile)) {
+            Yaml yaml = new Yaml();
+            Map<String, Object> data = yaml.load(reader);
+            player.getInventory().setContents(deserializeInventory(data));
+            invFile.delete();
+            player.setGameMode(GameMode.ADVENTURE);
+            player.teleport(Config.getReturnLocation());
+        } catch (Exception e) {
+            e.printStackTrace(System.out);
+        }
+        return true;
+    }
+
+    private boolean handleConfig(@NotNull CommandSender sender, String[] args) {
+        if (!sender.hasPermission(PERMISSION_CONFIG)) {
+            sender.sendMessage("§cYou do not have permission to use this command.");
             return true;
         }
 
         if (args.length == 1) {
-            return listCommits(sender);
-        } else {
-            return viewCommit(sender, args[1]);
-        }
-    }
-
-    private boolean listCommits(CommandSender sender) {
-        File commitFolder = new File(GitCraft.getInstance().getDataFolder(), "commits");
-        File[] files = commitFolder.listFiles((dir, name) -> name.endsWith(".yml"));
-        if (files != null) {
-            for (File file : files) {
-                try (FileReader reader = new FileReader(file)) {
-                    Yaml yaml = new Yaml();
-                    Map<String, Object> data = yaml.load(reader);
-                    sender.sendMessage(file.getName().replace(".yml", "") + " - " + data.get("message"));
-                } catch (Exception e) {
-                    sender.sendMessage("\u00A7cError reading commit " + file.getName() + " - " + e.getMessage());
-                }
-            }
-        }
-        return true;
-    }
-
-    private boolean viewCommit(CommandSender sender, String commitId) {
-        File commitFile = new File(new File(GitCraft.getInstance().getDataFolder(), "commits"), commitId + ".yml");
-        if (!commitFile.exists()) {
-            sender.sendMessage("\u00A7cCommit not found");
+            sender.sendMessage("§3Current Config",
+                    "§3World Name: §f" + Config.getWorld(),
+                    "§3Chunk Size: §f" + Config.getRadius(),
+                    "§3Return Location: §f" + Config.getReturnLocation());
             return true;
-        }
-        try (FileReader reader = new FileReader(commitFile)) {
-            Yaml yaml = new Yaml();
-            Map<String, Object> data = yaml.load(reader);
-            sender.sendMessage("\u00A73Message: \u00A7f" + data.get("message"));
-
-            if (sender instanceof Player) {
-                Player player = (Player) sender;
-                World world = sender.getServer().createWorld(new WorldCreator(commitId).type(WorldType.FLAT).generator(new GitCraftChunkGenerator()));
-                player.teleport(new Location(world, player.getLocation().getX(), player.getLocation().getY(), player.getLocation().getZ()));
-
-                File inventoryFile = new File(new File(commitFile.getParentFile(), "inventory"), player.getUniqueId() + ".yml");
-                if (inventoryFile.exists()) {
-                    inventoryFile.delete();
-                }
-                try (FileWriter inventoryWriter = new FileWriter(inventoryFile)) {
-                    Yaml inventoryYaml = new Yaml();
-                    inventoryYaml.dump(player.getInventory().getContents(), inventoryWriter);
-                    player.getInventory().clear();
-                }
-            }
-        } catch (Exception e) {
-            sender.sendMessage("\u00A7cError reading commit " + commitId + " - " + e.getMessage());
-        }
-        return true;
-    }
-
-    private boolean handleReturnCommand(CommandSender sender) {
-        if (!(sender instanceof Player)) {
-            sender.sendMessage("\u00A7cYou must be a player to use this command");
-            return true;
-        }
-        Player player = (Player) sender;
-        PlayerListeners.playerReturn(player);
-        player.teleport(Config.getReturnLocation());
-        return true;
-    }
-
-    private boolean handleCheckoutCommand(CommandSender sender, String[] args) {
-        if (!sender.hasPermission("gitcraft.commit") && !sender.hasPermission("gitcraft.manage")) {
-            sender.sendMessage("\u00A7cYou don't have permission to perform this command.");
-            return true;
-        }
-        if (args.length < 2) {
-            sender.sendMessage("Usage: /gitcraft checkout <message>");
-            return true;
-        }
-        if (!(sender instanceof Player)) {
-            sender.sendMessage("\u00A7cYou must be a player to use this command");
-            return true;
-        }
-        Player player = (Player) sender;
-        String commitId = "commit-" + System.currentTimeMillis() % 10000000;
-        File commitFolder = new File(GitCraft.getInstance().getDataFolder(), "commits");
-        File commitFile = new File(commitFolder, commitId + ".yml");
-
-        if (commitFile.exists()) {
-            sender.sendMessage("\u00A7cA commit already exists for this world");
-            return true;
-        }
-
-        try {
-            commitFile.createNewFile();
-            try (FileWriter writer = new FileWriter(commitFile)) {
-                Yaml yaml = new Yaml();
-                Map<String, Object> data = new HashMap<>();
-                data.put("message", String.join(" ", args).substring(10));
-                data.put("contributors", new ArrayList<String>());
-                data.put("chunks", new ArrayList<String>());
-                data.put("minY", 320);
-                data.put("maxY", -64);
-                data.put("author", player.getUniqueId().toString());
-                yaml.dump(data, writer);
-            }
-            WorldCreator creator = new WorldCreator(commitId);
-            creator.type(WorldType.FLAT);
-            creator.generator(new GitCraftChunkGenerator());
-            World commitWorld = creator.createWorld();
-
-            // Save the player's inventory to a file
-            File inventoryFolder = new File(GitCraft.getInstance().getDataFolder(), "inventory");
-            File inventoryFile = new File(inventoryFolder, player.getUniqueId() + ".yml");
-            if (inventoryFile.exists()) {
-                inventoryFile.delete();
-            }
-            inventoryFile.createNewFile();
-            try (FileWriter inventoryWriter = new FileWriter(inventoryFile)) {
-                Yaml inventoryYaml = new Yaml();
-                inventoryYaml.dump(player.getInventory().getContents(), inventoryWriter);
-                player.getInventory().clear();
-            }
-
-            // Copy all blocks in surrounding chunks to the new world
-            World originalWorld = player.getWorld();
-            int radius = Config.getRadius();
-            for (int x = -radius; x <= radius; x++) {
-                for (int z = -radius; z <= radius; z++) {
-                    copyRegionToNewWorld(originalWorld, commitWorld, player, x, z);
-                }
-            }
-            player.setGameMode(GameMode.CREATIVE);
-            player.teleport(new Location(commitWorld, player.getLocation().getX(), player.getLocation().getY(), player.getLocation().getZ()));
-            sender.sendMessage("\u00A73Commit created");
-        } catch (Exception e) {
-            sender.sendMessage("\u00A7cError creating commit - " + e.getMessage());
-        }
-        return true;
-    }
-
-    private boolean handleCommitCommands(CommandSender sender, String[] args) {
-        if (!sender.hasPermission("gitcraft.commit") && !sender.hasPermission("gitcraft.manage")) {
-            sender.sendMessage("\u00A7cYou don't have permission to perform this command.");
-            return true;
-        }
-        if (!(sender instanceof Player)) {
-            sender.sendMessage("\u00A7cYou must be a player to use this command");
-            return true;
-        }
-        Player player = (Player) sender;
-
-        if (args.length < 2 || args[1].equalsIgnoreCase("view")) {
-            return viewCurrentCommit(player);
         }
 
         switch (args[1].toLowerCase()) {
-            case "set-message":
-                return setCommitMessage(player, args);
-            case "contributor":
-                return handleContributorCommands(player, args);
-            case "cancel-commit":
-                return cancelCommit(player);
+            case "set":
+                return handleConfigSet(sender, args);
+            case "permission":
+                return handleConfigPermission(sender, args);
             default:
-                sender.sendMessage("\u00A7cUnknown commit command.");
                 return false;
         }
     }
 
-    private boolean viewCurrentCommit(Player player) {
-        File commitFile = new File(new File(GitCraft.getInstance().getDataFolder(), "commits"), player.getWorld().getName() + ".yml");
-        if (!commitFile.exists()) {
-            player.sendMessage("\u00A7cNo commit exists for this world");
+    private boolean handleConfigSet(@NotNull CommandSender sender, String[] args) {
+        if (args.length != 4) {
+            sender.sendMessage("§cUsage: /gitcraft config set <path> <value>");
             return true;
         }
-        try (FileReader reader = new FileReader(commitFile)) {
-            Yaml yaml = new Yaml();
-            Map<String, Object> data = yaml.load(reader);
-            player.sendMessage("\u00A73Message: \u00A7f" + data.get("message"));
-            player.sendMessage("\u00A73Contributors: \u00A7f" + String.join(", ", (List<String>) data.get("contributors")));
-        } catch (Exception e) {
-            player.sendMessage("\u00A7cError reading commit " + player.getWorld().getName() + " - " + e.getMessage());
-        }
+
+        Config.set(args[2], args[3]);
+        sender.sendMessage("§3Set " + args[2] + " to " + args[3]);
         return true;
     }
 
-    private boolean setCommitMessage(Player player, String[] args) {
-        if (args.length < 3) {
-            player.sendMessage("Usage: /gitcraft commit set-message <message>");
+    private boolean handleConfigPermission(@NotNull CommandSender sender, String[] args) {
+        if (args.length != 5) {
+            sender.sendMessage("§cUsage: /gitcraft config permission <give|remove> <permission> <player>");
             return true;
-        }
-        File commitFile = new File(new File(GitCraft.getInstance().getDataFolder(), "commits"), player.getWorld().getName() + ".yml");
-        if (!commitFile.exists()) {
-            player.sendMessage("\u00A7cNo commit exists for this world");
-            return true;
-        }
-        try (FileReader reader = new FileReader(commitFile)) {
-            Yaml yaml = new Yaml();
-            Map<String, Object> data = yaml.load(reader);
-            if (!((List<String>) data.get("contributors")).contains(player.getUniqueId().toString())) {
-                player.sendMessage("\u00A7cYou are not a contributor to this commit");
-                return true;
-            }
-            data.put("message", String.join(" ", args).substring(args[0].length() + args[1].length() + 2));
-            try (FileWriter writer = new FileWriter(commitFile)) {
-                yaml.dump(data, writer);
-                player.sendMessage("\u00A73Message set to \u00A7f" + data.get("message"));
-            }
-        } catch (Exception e) {
-            player.sendMessage("\u00A7cError setting message - " + e.getMessage());
-        }
-        return true;
-    }
-
-    private boolean handleContributorCommands(Player player, String[] args) {
-        if (args.length < 3 || args[2].equalsIgnoreCase("list")) {
-            return listContributors(player);
         }
 
         switch (args[2].toLowerCase()) {
-            case "add":
-                return addContributor(player, args);
+            case "give":
+                sender.addAttachment(GitCraft.getInstance()).setPermission("gitcraft." + args[3], true);
+                sender.sendMessage("§3Gave " + args[4] + " permission gitcraft." + args[3]);
+                break;
             case "remove":
-                return removeContributor(player, args);
+                sender.addAttachment(GitCraft.getInstance()).setPermission("gitcraft." + args[3], false);
+                sender.sendMessage("§3Removed " + args[4] + " permission gitcraft." + args[3]);
+                break;
             default:
-                player.sendMessage("\u00A7cUnknown contributor command.");
-                return false;
-        }
-    }
-
-    private boolean listContributors(Player player) {
-        File commitFile = new File(new File(GitCraft.getInstance().getDataFolder(), "commits"), player.getWorld().getName() + ".yml");
-        if (!commitFile.exists()) {
-            player.sendMessage("\u00A7cNo commit exists for this world");
-            return true;
-        }
-        try (FileReader reader = new FileReader(commitFile)) {
-            Yaml yaml = new Yaml();
-            Map<String, Object> data = yaml.load(reader);
-            player.sendMessage("\u00A73Contributors: \u00A7f" + String.join(", ", (List<String>) data.get("contributors")));
-        } catch (Exception e) {
-            player.sendMessage("\u00A7cError reading commit " + player.getWorld().getName() + " - " + e.getMessage());
+                sender.sendMessage("§cUsage: /gitcraft config permission <give|remove> <permission> <player>");
+                break;
         }
         return true;
     }
 
-    private boolean addContributor(Player player, String[] args) {
-        if (args.length < 4) {
-            player.sendMessage("Usage: /gitcraft commit contributor add <player>");
+    private boolean handleCheckout(@NotNull CommandSender sender) {
+        if (!sender.hasPermission(PERMISSION_CHECKOUT)) {
+            sender.sendMessage("§cYou do not have permission to use this command.");
             return true;
         }
-        File commitFile = new File(new File(GitCraft.getInstance().getDataFolder(), "commits"), player.getWorld().getName() + ".yml");
-        if (!commitFile.exists()) {
-            player.sendMessage("\u00A7cNo commit exists for this world");
+
+        if (!(sender instanceof Player)) {
+            sender.sendMessage("This command can only be run by a player.");
             return true;
         }
-        try (FileWriter writer = new FileWriter(commitFile, true)) {
-            Yaml yaml = new Yaml();
-            Map<String, Object> data = yaml.load(new FileReader(commitFile));
-            OfflinePlayer offlinePlayer = player.getServer().getOfflinePlayer(args[3]);
-            if (offlinePlayer.hasPlayedBefore()) {
-                if (((List<String>) data.get("contributors")).contains(offlinePlayer.getUniqueId().toString())) {
-                    player.sendMessage("\u00A7cPlayer is already a contributor");
-                    return true;
-                }
-                ((List<String>) data.get("contributors")).add(offlinePlayer.getUniqueId().toString());
-                yaml.dump(data, writer);
-                player.sendMessage("\u00A73Contributor added");
-            } else {
-                player.sendMessage("\u00A7cPlayer not found");
-            }
+
+        Player player = (Player) sender;
+        File commits = new File(GitCraft.getInstance().getDataFolder(), "commits");
+        File commit = new File(commits, player.getWorld().getName() + ".yml");
+
+        Yaml yaml = new Yaml();
+        try (FileWriter writer = new FileWriter(commit)) {
+            World world = createCommitWorld(player);
+
+            Map<String, Object> data = new HashMap<>();
+            data.put("world", world.getName());
+            data.put("author", player.getUniqueId().toString());
+            data.put("contributors", List.of(player.getUniqueId().toString()));
+            data.put("chunks", List.of());
+            data.put("minY", 256);
+            data.put("maxY", -64);
+
+            yaml.dump(data, writer);
+            copyWorldChunks(player, world);
+            player.teleport(world.getSpawnLocation());
+            player.sendMessage("§3Checked out world to commit " + player.getWorld().getName());
+
         } catch (Exception e) {
-            player.sendMessage("\u00A7cError adding contributor - " + e.getMessage());
+            e.printStackTrace(System.out);
         }
         return true;
     }
 
-    private boolean removeContributor(Player player, String[] args) {
-        if (args.length < 4) {
-            player.sendMessage("Usage: /gitcraft commit contributor remove <player>");
-            return true;
-        }
-        File commitFile = new File(new File(GitCraft.getInstance().getDataFolder(), "commits"), player.getWorld().getName() + ".yml");
-        if (!commitFile.exists()) {
-            player.sendMessage("\u00A7cNo commit exists for this world");
-            return true;
-        }
-        try (FileWriter writer = new FileWriter(commitFile, true)) {
-            Yaml yaml = new Yaml();
-            Map<String, Object> data = yaml.load(new FileReader(commitFile));
-            OfflinePlayer offlinePlayer = player.getServer().getOfflinePlayer(args[3]);
-            if (offlinePlayer.hasPlayedBefore()) {
-                if (!((List<String>) data.get("contributors")).contains(offlinePlayer.getUniqueId().toString())) {
-                    player.sendMessage("\u00A7cPlayer is not a contributor");
-                    return true;
-                }
-                ((List<String>) data.get("contributors")).remove(offlinePlayer.getUniqueId().toString());
-                yaml.dump(data, writer);
-                player.sendMessage("\u00A73Contributor removed");
-            } else {
-                player.sendMessage("\u00A7cPlayer not found");
-            }
-        } catch (Exception e) {
-            player.sendMessage("\u00A7cError removing contributor - " + e.getMessage());
-        }
-        return true;
+    private World createCommitWorld(Player player) {
+        WorldCreator creator = new WorldCreator("commit-" + System.currentTimeMillis()).generator(new GitCraftChunkGenerator());
+        return creator.createWorld();
     }
 
-    private boolean cancelCommit(Player player) {
-        File commitFile = new File(new File(GitCraft.getInstance().getDataFolder(), "commits"), player.getWorld().getName() + ".yml");
-        if (!commitFile.exists()) {
-            player.sendMessage("\u00A7cNo commit exists for this world");
-            return true;
-        }
-        try (FileReader reader = new FileReader(commitFile)) {
-            Yaml yaml = new Yaml();
-            Map<String, Object> data = yaml.load(reader);
-            if (!data.get("author").equals(player.getUniqueId().toString())) {
-                player.sendMessage("\u00A7cYou are not the author of this commit");
-                return true;
-            }
-        } catch (Exception e) {
-            player.sendMessage("\u00A7cError reading commit " + player.getWorld().getName() + " - " + e.getMessage());
-            return true;
-        }
-        commitFile.delete();
-        player.sendMessage("\u00A73Commit cancelled");
-
-        File worldFolder = new File(GitCraft.getInstance().getDataFolder().getParentFile().getParentFile(), player.getWorld().getName());
-        if (worldFolder.exists()) {
-            for (File file : worldFolder.listFiles()) {
-                file.delete();
-            }
-            worldFolder.delete();
-        }
-        player.teleport(Config.getReturnLocation());
-        return true;
+    private void copyWorldChunks(Player player, World world) {
+        player.getServer().dispatchCommand(player.getServer().getConsoleSender(), "//pos1 " + (player.getX() - 16 * Config.getRadius()) + ",-64," + (player.getZ() - 16 * Config.getRadius()));
+        player.getServer().dispatchCommand(player.getServer().getConsoleSender(), "//pos2 " + (player.getX() + 16 * Config.getRadius()) + ",256," + (player.getZ() + 16 * Config.getRadius()));
+        player.getServer().dispatchCommand(player.getServer().getConsoleSender(), "//world " + player.getWorld().getName());
+        player.getServer().dispatchCommand(player.getServer().getConsoleSender(), "//copy");
+        player.getServer().dispatchCommand(player.getServer().getConsoleSender(), "//world " + world.getName());
+        player.getServer().dispatchCommand(player.getServer().getConsoleSender(), "//paste");
+        world.setSpawnLocation(new Location(world, player.getX(), player.getY(), player.getZ()));
     }
 
-    private boolean handleAcceptCommitCommand(CommandSender sender, String[] args) {
-        if (!sender.hasPermission("gitcraft.commit.manage")) {
-            sender.sendMessage("\u00A7cYou don't have permission to perform this command.");
+    private boolean handleReject(CommandSender sender, String[] args) {
+        if (!sender.hasPermission(PERMISSION_REJECT)) {
+            sender.sendMessage("§cYou do not have permission to use this command.");
             return true;
         }
+
         if (args.length < 2) {
-            sender.sendMessage("Usage: /gitcraft accept-commit <world>");
+            sender.sendMessage("§cUsage: /gitcraft reject <commit> <reason>");
             return true;
         }
-        File commitFile = new File(new File(GitCraft.getInstance().getDataFolder(), "commits"), args[1] + ".yml");
-        if (!commitFile.exists()) {
-            sender.sendMessage("\u00A7cCommit not found");
+
+        File commits = new File(GitCraft.getInstance().getDataFolder(), "commits");
+        File commit = new File(commits, args[1] + ".yml");
+
+        if (commit.exists()) {
+            commit.delete();
+        }
+
+        new File(GitCraft.getInstance().getDataFolder().getParentFile().getParentFile(), args[1]).delete();
+        return true;
+    }
+
+    private boolean handleApprove(CommandSender sender, String[] args) {
+        if (!sender.hasPermission(PERMISSION_APPROVE)) {
+            sender.sendMessage("§cYou do not have permission to use this command.");
             return true;
         }
-        try (FileReader reader = new FileReader(commitFile)) {
-            Yaml yaml = new Yaml();
+
+        if (args.length < 2) {
+            sender.sendMessage("§cUsage: /gitcraft approve <commit>");
+            return true;
+        }
+
+        File commits = new File(GitCraft.getInstance().getDataFolder(), "commits");
+        File commit = new File(commits, args[1] + ".yml");
+
+        if (!commit.exists()) {
+            return true;
+        }
+
+        Yaml yaml = new Yaml();
+        try (FileReader reader = new FileReader(commit)) {
             Map<String, Object> data = yaml.load(reader);
-            for (String chunkStr : (List<String>) data.get("chunks")) {
-                long chunkLong = Long.parseLong(chunkStr);
-                Chunk chunk = sender.getServer().getWorld(Config.getWorld()).getChunkAt(chunkLong);
-                ChunkSnapshot snapshot = chunk.getChunkSnapshot();
-                for (int x = 0; x < 16; x++) {
-                    for (int z = 0; z < 16; z++) {
-                        for (int y = Integer.parseInt(data.get("minY").toString()); y < Integer.parseInt(data.get("maxY").toString()); y++) {
-                            Config.getReturnLocation().getWorld().getBlockAt(chunk.getX() * 16 + x, y, chunk.getZ() * 16 + z).setType(snapshot.getBlockType(x, y, z));
-                        }
-                    }
-                }
+            copyCommitToMainWorld(sender, data);
+
+            commit.delete();
+            new File(GitCraft.getInstance().getDataFolder().getParentFile().getParentFile(), args[1]).delete();
+
+        } catch (Exception e) {
+            e.printStackTrace(System.out);
+        }
+        return true;
+    }
+
+    private void copyCommitToMainWorld(CommandSender sender, Map<String, Object> data) {
+        sender.getServer().dispatchCommand(sender.getServer().getConsoleSender(), "//world " + data.get("world"));
+        sender.getServer().dispatchCommand(sender.getServer().getConsoleSender(), "//pos1 " + data.get("minX") + ", " + data.get("minY") + ", " + data.get("minZ"));
+        sender.getServer().dispatchCommand(sender.getServer().getConsoleSender(), "//pos2 " + data.get("maxX") + ", " + data.get("maxY") + ", " + data.get("maxZ"));
+        sender.getServer().dispatchCommand(sender.getServer().getConsoleSender(), "//copy");
+        sender.getServer().dispatchCommand(sender.getServer().getConsoleSender(), "//world " + Config.getReturnLocation().getWorld().getName());
+        sender.getServer().dispatchCommand(sender.getServer().getConsoleSender(), "//paste");
+    }
+
+    private boolean handleCommit(CommandSender sender, String[] args) {
+        if (!sender.hasPermission(PERMISSION_COMMIT)) {
+            sender.sendMessage("§cYou do not have permission to use this command.");
+            return true;
+        }
+
+        if (args.length < 2) {
+            sender.sendMessage("§cUsage: /gitcraft commit manage <commit> <subcommand> <...args>");
+            return true;
+        }
+
+        if ("manage".equalsIgnoreCase(args[1])) {
+            return handleCommitManage(sender, args);
+        }
+
+        return false;
+    }
+
+    private boolean handleCommitManage(CommandSender sender, String[] args) {
+        if (args.length < 4) {
+            sender.sendMessage("§cUsage: /gitcraft commit manage <commit> <subcommand> <...args>");
+            return true;
+        }
+
+        File commits = new File(GitCraft.getInstance().getDataFolder(), "commits");
+        File commit = new File(commits, args[2] + ".yml");
+
+        if (!commit.exists()) {
+            return true;
+        }
+
+        Yaml yaml = new Yaml();
+        try (FileReader reader = new FileReader(commit)) {
+            Map<String, Object> data = yaml.load(reader);
+
+            switch (args[3].toLowerCase()) {
+                case "add":
+                    return handleCommitAdd(sender, args, commit, data, yaml);
+                case "remove":
+                    return handleCommitRemove(sender, args, commit, data, yaml);
+                case "delete":
+                    return handleCommitDelete(sender, commit, args);
+                default:
+                    sender.sendMessage("§cUsage: /gitcraft commit manage <commit> <add|remove|delete> <...args>");
+                    return true;
             }
         } catch (Exception e) {
-            sender.sendMessage("\u00A7cError reading commit " + args[1] + " - " + e.getMessage());
-            return true;
-        }
-        commitFile.delete();
-        sender.sendMessage("\u00A73Commit accepted");
-
-        File worldFolder = new File(GitCraft.getInstance().getDataFolder().getParentFile().getParentFile(), args[1]);
-        if (worldFolder.exists()) {
-            for (File file : worldFolder.listFiles()) {
-                file.delete();
-            }
-            worldFolder.delete();
+            e.printStackTrace(System.out);
         }
         return true;
     }
 
-    private boolean handleRejectCommitCommand(CommandSender sender, String[] args) {
-        if (!sender.hasPermission("gitcraft.commit.manage")) {
-            sender.sendMessage("\u00A7cYou don't have permission to perform this command.");
+    private boolean handleCommitAdd(CommandSender sender, String[] args, File commit, Map<String, Object> data, Yaml yaml) {
+        if (args.length < 5) {
+            sender.sendMessage("§cUsage: /gitcraft commit manage <commit> add <player>");
             return true;
         }
-        if (args.length < 3) {
-            sender.sendMessage("Usage: /gitcraft reject-commit <world> <reason>");
-            return true;
-        }
-        File commitFile = new File(new File(GitCraft.getInstance().getDataFolder(), "commits"), args[1] + ".yml");
-        if (!commitFile.exists()) {
-            sender.sendMessage("\u00A7cCommit not found");
-            return true;
-        }
-        commitFile.delete();
-        sender.sendMessage("\u00A73Commit rejected");
 
-        File worldFolder = new File(GitCraft.getInstance().getDataFolder().getParentFile().getParentFile(), args[1]);
-        if (worldFolder.exists()) {
-            for (File file : worldFolder.listFiles()) {
-                file.delete();
-            }
-            worldFolder.delete();
+        List<String> contributors = (List<String>) data.get("contributors");
+        contributors.add(args[4]);
+        data.put("contributors", contributors);
+
+        try (FileWriter writer = new FileWriter(commit)) {
+            yaml.dump(data, writer);
+        } catch (Exception e) {
+            e.printStackTrace(System.out);
         }
+
+        sender.sendMessage("§3Added " + args[4] + " to the contributors of " + args[2]);
         return true;
     }
 
-    private void copyRegionToNewWorld(World sourceWorld, World destWorld, Player player, int regionX, int regionZ) {
-        String sourceRegionFile = String.format("r.%d.%d.mca", regionX, regionZ);
-        File sourceFile = new File(sourceWorld.getWorldFolder(), "region/" + sourceRegionFile);
-        File destFile = new File(destWorld.getWorldFolder(), "region/" + sourceRegionFile);
-
-        if (sourceFile.exists()) {
-            try {
-                Files.createDirectories(destFile.getParentFile().toPath());
-                Files.copy(sourceFile.toPath(), destFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-                player.sendMessage("\u00A73Region " + sourceRegionFile + " copied successfully.");
-            } catch (IOException e) {
-                player.sendMessage("\u00A7cFailed to copy region " + sourceRegionFile + ": " + e.getMessage());
-                e.printStackTrace();
-            }
-        } else {
-            player.sendMessage("\u00A7cSource region file " + sourceRegionFile + " does not exist.");
+    private boolean handleCommitRemove(CommandSender sender, String[] args, File commit, Map<String, Object> data, Yaml yaml) {
+        if (args.length < 5) {
+            sender.sendMessage("§cUsage: /gitcraft commit manage <commit> remove <player>");
+            return true;
         }
+
+        List<String> contributors = (List<String>) data.get("contributors");
+        contributors.remove(args[4]);
+        data.put("contributors", contributors);
+
+        try (FileWriter writer = new FileWriter(commit)) {
+            yaml.dump(data, writer);
+        } catch (Exception e) {
+            e.printStackTrace(System.out);
+        }
+
+        sender.sendMessage("§3Removed " + args[4] + " from the contributors of " + args[2]);
+        return true;
+    }
+
+    private boolean handleCommitDelete(CommandSender sender, File commit, String[] args) {
+        commit.delete();
+        new File(GitCraft.getInstance().getDataFolder().getParentFile().getParentFile(), args[2]).delete();
+        sender.sendMessage("§3Deleted commit " + args[2]);
+        return true;
+    }
+
+    private boolean handleHelp(@NotNull CommandSender sender) {
+        sender.sendMessage("§3Gitcraft Help",
+                "§3/gitcraft help §f- Show this help message",
+                "§3/gitcraft view §f- View all commit worlds",
+                "§3/gitcraft view §6<world> §f- View the specified world",
+                "§3/gitcraft return §f- Return to the return location");
+
+        if (sender.hasPermission(PERMISSION_CONFIG)) {
+            sender.sendMessage("§e/gitcraft config §f- Show the Current Config for Gitcraft",
+                    "§3/gitcraft config set §6<path> <value> §f- Set a value in the config",
+                    "§3/gitcraft config permission <give|remove> <permission> <player> §f- Save the current config");
+        }
+
+        if (sender.hasPermission(PERMISSION_COMMIT)) {
+            sender.sendMessage("§3/gitcraft checkout - Checkout the current world to a new commit world",
+                    "§3/gitcraft commit manage §6<commit> <subcommand> <...args>§f- Manage the details of the specified commit");
+        }
+
+        if (sender.hasPermission(PERMISSION_APPROVE)) {
+            sender.sendMessage("§3/gitcraft approve §6<commit> §f- Approve the specified commit",
+                    "§3/gitcraft reject §6<commit> <reason> §f- Reject the specified commit");
+        }
+
+        return true;
+    }
+
+    private ItemStack[] deserializeInventory(Map<String, Object> data) {
+        ItemStack[] inventory = new ItemStack[36];
+        for (int i = 0; i < 36; i++) {
+            Map<String, Object> itemData = (Map<String, Object>) data.get(String.valueOf(i));
+            if (itemData != null) {
+                inventory[i] = ItemStack.deserialize(itemData);
+            }
+        }
+        return inventory;
     }
 }

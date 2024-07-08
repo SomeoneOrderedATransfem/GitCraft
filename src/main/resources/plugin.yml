@@ -10,15 +10,25 @@ commands:
     permission: gitcraft.command
     permission-message: "You do not have the proper permissions"
 permissions:
-  gitcraft.command:
-    description: "Allows the player to use the gitcraft command"
+  gitcraft.view:
+    description: "Allows viewing commit worlds"
+    default: true
+  gitcraft.return:
+    description: "Allows returning to the return location"
+    default: true
+  gitcraft.config:
+    description: "Allows configuring Gitcraft settings"
+    default: op
+  gitcraft.checkout:
+    description: "Allows checking out the current world to a new commit world"
     default: op
   gitcraft.commit:
-    description: "Allows the player to use the commit commands"
+    description: "Allows managing commits"
     default: op
-  gitcraft.commit.manage:
-    description: "Allows the player to manage the commits"
+  gitcraft.approve:
+    description: "Allows approving commits"
     default: op
-  gitcraft.manage:
-    description: "Allows the player to manage the plugin"
+  gitcraft.reject:
+    description: "Allows rejecting commits"
     default: op
+
