@@ -9,11 +9,15 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.WorldCreator;
+
 import org.jetbrains.annotations.NotNull;
+
 import transfem.order.gitcraft.GitCraft;
 import transfem.order.gitcraft.util.Config;
 import transfem.order.gitcraft.util.GitCraftChunkGenerator;
+
 import org.yaml.snakeyaml.Yaml;
+
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -82,7 +86,9 @@ public class Commands implements CommandExecutor {
         File commit = new File(commits, args[1] + ".yml");
         File inventoryDir = new File(GitCraft.getInstance().getDataFolder(), "inventory");
         File invFile = new File(inventoryDir, player.getUniqueId() + ".yml");
-
+        if (!commit.exists()) {
+            return true;
+        }
         Yaml yaml = new Yaml();
         try (FileReader reader = new FileReader(commit)) {
             Map<String, Object> data = yaml.load(reader);
@@ -137,7 +143,7 @@ public class Commands implements CommandExecutor {
         }
 
         Player player = (Player) sender;
-        sender.sendMessage("§3Sending you back to " + Config.getWorld());
+        sender.sendMessage("§3Sending you back to " + Config.getReturnLocation().getWorld().getName());
 
         File invFile = new File(GitCraft.getInstance().getDataFolder(), "inventory/" + player.getUniqueId() + ".yml");
 
@@ -179,11 +185,18 @@ public class Commands implements CommandExecutor {
     }
 
     private boolean handleConfigSet(@NotNull CommandSender sender, String[] args) {
-        if (args.length != 4) {
+        if (args.length != 4 && !args[2].equalsIgnoreCase("returnLocation")) {
             sender.sendMessage("§cUsage: /gitcraft config set <path> <value>");
             return true;
         }
+        if (args[2].equalsIgnoreCase("returnLocation")) {
 
+            Config.set(args[2] + ".x", ((Player) sender).getLocation().getX());
+            Config.set(args[2] + ".y", ((Player) sender).getLocation().getY());
+            Config.set(args[2] + ".z", ((Player) sender).getLocation().getZ());
+            sender.sendMessage("§3Set " + args[2] + " to " + args[3]);
+            return true;
+        }
         Config.set(args[2], args[3]);
         sender.sendMessage("§3Set " + args[2] + " to " + args[3]);
         return true;

@@ -32,6 +32,9 @@ public class CommandsTabCompleter implements TabCompleter {
             if (args.length == 3 && args[1].equalsIgnoreCase("permission")) {
                 return getMatchingStrings(args[2], Arrays.asList("give", "remove"));
             }
+            if (args.length == 3 && args[1].equalsIgnoreCase("set")) {
+                return getConfigNames();
+            }
         }
 
         if (args[0].equalsIgnoreCase("commit")) {
@@ -73,4 +76,19 @@ public class CommandsTabCompleter implements TabCompleter {
         }
         return matches;
     }
+
+    private List<String> getConfigNames() {
+        File config = new File(GitCraft.getInstance().getDataFolder(), "config.yml");
+        if (!config.exists())
+            return List.of();
+        Yaml yaml = new Yaml();
+        try (FileReader reader = new FileReader(config)) {
+            Map<String, Object> data = yaml.load(reader);
+            return new ArrayList<>(data.keySet());
+        } catch (Exception e) {
+            e.printStackTrace(System.out);
+        }
+        return List.of();
+    }
 }
+
